@@ -8,9 +8,10 @@
 
 import RealmSwift
 
-class RealmObject1: Object {
+class Person: Object {
 
-    dynamic var aProperty:String = ""
-    dynamic var justABoolean = false
+    dynamic var personName = ""
+    dynamic var hungry = false
+    dynamic var cat:Cat?
 
 }

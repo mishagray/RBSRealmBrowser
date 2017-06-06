@@ -10,45 +10,55 @@ import UIKit
 import RBSRealmBrowser
 import RealmSwift
 
-
 class ViewController: UIViewController {
-
+    
     private var sampleView = SampleView()
-
+    
     override func loadView() {
         self.view = sampleView
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        let realm = try! Realm()
+        
+        
+        let catNames = ["Garfield", "Lutz", "Squanch"]
+        let humanNames = ["Morty", "Rick", "Birdperson"]
         var i = 0
-        while i < 5 {
-            try! realm.write() {
-                let object = RealmObject1()
-                object.aProperty = String(format:"Number %i", i)
-                realm.add(object)
-                let object2 = RealmObject2()
-                object2.aProperty = String(format:"Number %i", i)
-                object2.objects.append(object)
-                object2.objects.append(object)
-                object2.objects.append(object)
-                realm.add(object2)
+        while i < 3 {
+            do {
+                let realm = try Realm()
+                try realm.write() {
+                    let person = Person()
+                    person.personName = humanNames[i]
+                    realm.add(person)
+                    let cat = Cat()
+                    person.cat = cat;
+                    cat.catName = catNames[i]
+                    cat.isTired = true
+                    cat.toys.append(person)
+                    cat.toys.append(person)
+                    cat.toys.append(person)
+                    person.cat = cat;
+                    realm.add(cat)
+                }
+
+            }catch {
+                print("failed creatimg objects")
             }
+            
             i += 1
         }
-
-
+        
         let bbi = UIBarButtonItem(title: "Open", style: UIBarButtonItemStyle.plain, target: self, action: #selector(ViewController.openBrowser))
         self.navigationItem.rightBarButtonItem = bbi
     }
-
+    
     func openBrowser(_ id: AnyObject) {
-        let rb = RBSRealmBrowser.realmBrowser()
-        self.present(rb as! UIViewController, animated: true) {
-
+        let rb:UIViewController =  RBSRealmBrowser.realmBrowser()!
+        self.present(rb, animated: true) {
         }
+        
     }
-
+    
 }

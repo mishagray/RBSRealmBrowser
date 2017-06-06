@@ -10,14 +10,34 @@ import UIKit
 import RealmSwift
 
 class RBSRealmPropertyCell: UITableViewCell, UITextFieldDelegate {
-    private var propertyTitle = UILabel()
-    private var propertyValue = UITextField()
-    private var propertyValueLabel = UILabel()
+    private var labelPropertyTitle = UILabel()
+    private var textFieldPropValue = UITextField()
+    private var labelPropertyType = UILabel()
     private var property: Property! = nil
-    var delegate: RBSRealmPropertyCellDelegate! = nil
+    weak var delegate: RBSRealmPropertyCellDelegate?
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        
+        textFieldPropValue.returnKeyType = .done
+        textFieldPropValue.backgroundColor = .white
+        textFieldPropValue.textAlignment = .right
+        
+        let spacing = UIView(frame:CGRect(x:0.0, y:0.0, width:10.0, height:0.0))
+        textFieldPropValue.leftViewMode = .always
+        textFieldPropValue.leftView = spacing
+        textFieldPropValue.rightViewMode = .always
+        textFieldPropValue.rightView = spacing
+        UITextField.appearance().tintColor = UIColor(red:0.35, green:0.34, blue:0.62, alpha:1.0)
+        contentView.addSubview(self.textFieldPropValue)
+        
+        labelPropertyTitle = labelWithAttributes(14, weight:0.3, text: "")
+        contentView.addSubview(self.labelPropertyTitle)
+        
+        labelPropertyType.font = UIFont.systemFont(ofSize: 12.0)
+        labelPropertyType.textColor = .lightGray
+        contentView.addSubview(labelPropertyType)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -26,59 +46,55 @@ class RBSRealmPropertyCell: UITableViewCell, UITextFieldDelegate {
     
     override func prepareForReuse() {
         super.prepareForReuse()
-        propertyValue.text = ""
-        propertyValue.removeFromSuperview()
-        propertyTitle.text = ""
-        propertyTitle.removeFromSuperview()
+        textFieldPropValue.text = ""
+        labelPropertyTitle.text = ""
+        labelPropertyType.text = ""
     }
     
-    func cellWithAttributes(_ propertyTitle: String, propertyValue: String, editMode: Bool, property: Property) {
-        self.propertyTitle = self.labelWithAttributes(14, weight:0.3, text: propertyTitle)
-        self.contentView.addSubview(self.propertyTitle)
-        
-        if property.type == .array {
-            propertyValueLabel = self.labelWithAttributes(14, weight:0.3, text: propertyValue)
-            self.addSubview(propertyValueLabel)
-        } else {
-            
-            self.propertyValue = UITextField()
-            self.propertyValue.isUserInteractionEnabled = editMode
-            self.isUserInteractionEnabled = editMode
-            if property.type == .bool {
-                //            self.propertyValue.userInteractionEnabled = false
-            }
-            if property.type == .float || property.type == .double {
-                self.propertyValue.keyboardType = UIKeyboardType.decimalPad
-            } else if property.type == .int {
-                self.propertyValue.keyboardType = UIKeyboardType.numberPad
-            }
-            
-            self.propertyValue.delegate = self
-            self.propertyValue.backgroundColor = .black
-            self.propertyValue.returnKeyType = .done
-            self.propertyValue.backgroundColor = .white
-            self.propertyValue.textAlignment = .right
-            
-            self.propertyValue.text = propertyValue
-            
-            self.contentView.addSubview(self.propertyValue)
-        }
+    func cellWithAttributes(_ propertyTitle: String, propertyValue: String, editMode: Bool, property: Property, isArray:Bool) {
         self.property = property
-        self.setNeedsLayout()
+        textFieldPropValue.delegate = self
+        labelPropertyTitle.text = propertyTitle
+        labelPropertyType.text = stringForType(type: property.type)
+        if editMode {
+            textFieldPropValue.resignFirstResponder()
+        }
+        self.textFieldPropValue.isUserInteractionEnabled = editMode
+        
+        if isArray || property.type == .object{
+            textFieldPropValue.isUserInteractionEnabled = false
+        }
+        
+        if property.type == .float || property.type == .double {
+            textFieldPropValue.keyboardType = .decimalPad
+        } else if property.type == .int {
+            textFieldPropValue.keyboardType = .numberPad
+        }
+        
+        textFieldPropValue.text = propertyValue
+        if editMode && !isArray && property.type != .object {
+            textFieldPropValue.layer.borderColor = UIColor(red:0.35, green:0.34, blue:0.62, alpha:1.0).cgColor
+            textFieldPropValue.layer.borderWidth = 1.0
+        }else {
+            textFieldPropValue.layer.borderWidth = 0.0
+        }
+        
+        setNeedsLayout()
+        isUserInteractionEnabled = true
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
         let borderOffset: CGFloat = 20.0
         
-        propertyTitle.frame = (CGRect(x: borderOffset, y: borderOffset, width: self.bounds.size.width-2*borderOffset, height: 2000))
-        propertyTitle.sizeToFit()
-        propertyTitle.frame = (CGRect(x: borderOffset, y: (self.bounds.size.height-propertyTitle.bounds.size.height)/2, width: self.propertyTitle.bounds.size.width, height: propertyTitle.bounds.size.height))
+        var labelSize = labelPropertyTitle.sizeThatFits(CGSize(width: contentView.bounds.size.width - 2*borderOffset, height: 2000.0))
+        let labelPropertyTypeSize = labelPropertyType.sizeThatFits(CGSize(width: contentView.bounds.size.width - 2*borderOffset, height: 2000.0))
+        labelPropertyTitle.frame = (CGRect(x: borderOffset, y: (contentView.bounds.size.height - labelSize.height - labelPropertyTypeSize.height - 10.0)/2.0, width: labelSize.width, height: labelSize.height))
+        labelPropertyType.frame = (CGRect(x: borderOffset, y: labelPropertyTitle.frame.origin.y + labelSize.height + borderOffset/2.0, width: labelPropertyTypeSize.width, height: labelPropertyTypeSize.height))
         
-        let posX = propertyTitle.frame.origin.x + propertyTitle.bounds.size.width
-        let textFieldWidth = self.bounds.size.width-4*borderOffset-propertyTitle.bounds.size.width
-        propertyValue.frame = (CGRect(x:posX+50, y: (self.bounds.size.height-40)/2, width:textFieldWidth, height: 40))
-        
+        let labelWidth = contentView.bounds.size.width-labelPropertyTitle.bounds.size.width-4*borderOffset
+        labelSize = textFieldPropValue.sizeThatFits(CGSize(width: labelWidth, height: 2000.0))
+        textFieldPropValue.frame = (CGRect(x:contentView.bounds.size.width-min(labelSize.width,labelWidth)-borderOffset, y: (contentView.bounds.size.height-labelSize.height - borderOffset)/2, width:min(labelSize.width,labelWidth), height: labelSize.height + borderOffset))
     }
     
     //MARK: private method
@@ -94,45 +110,87 @@ class RBSRealmPropertyCell: UITableViewCell, UITextFieldDelegate {
         return label
     }
     
-    //MARK: UITextFieldDelegate
-    
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        if  property != nil {
-            if property.type == .bool {
-                
-                let isEqual = (propertyValue.text! as String == "false")
-                var newValue = "0"
-                if isEqual {
-                    newValue = "1"
-                    propertyValue.text = "true"
-                } else {
-                    propertyValue.text = "false"
-                }
-                
-                self.delegate.textFieldDidFinishEdit(newValue, property: self.property)
-                propertyValue.resignFirstResponder()
-            }
+    private func stringForType(type:PropertyType) -> String {
+        switch type {
+        case .array:
+            return "Array"
+        case .bool:
+            return "Boolean"
+        case .float:
+            return "Float"
+        case .double:
+            return "Double"
+        case .string:
+            return "String"
+        case .int:
+            return "Int"
+        case .data:
+            return "Data"
+        case .date:
+            return "Date"
+        case .linkingObjects:
+            return "Linking objects"
+        case .object:
+            return "Object"
+        case .any:
+            return "Any"
         }
     }
     
+    //MARK: UITextFieldDelegate
     
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        propertyValue.isUserInteractionEnabled = false
-        self.delegate.textFieldDidFinishEdit(textField.text!, property: self.property)
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         return true
     }
     
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        textField.resignFirstResponder()
-        propertyValue.isUserInteractionEnabled = false
-        if  property.type != .bool {
-            self.delegate.textFieldDidFinishEdit(textField.text!, property: self.property)
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        if  (property != nil) && (property.type == .bool) {
+            textField.resignFirstResponder()
+            let isEqual:Bool = (textFieldPropValue.text! as String == "false")
+            var newValue = "0"
+            if isEqual {
+                newValue = "1"
+                textField.text = "true"
+            } else {
+                textField.text = "false"
+            }
+            
+            guard let del = delegate else {
+                print("delegate not set")
+                return
+            }
+            
+            del.textFieldDidFinishEdit(newValue, property: self.property)
+            self.setNeedsLayout()
         }
-        
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.isUserInteractionEnabled = false
+                return true
+    }
+    
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if  property.type != .bool {
+            guard let del = delegate else {
+                print("delegate not set")
+                return
+            }
+            del.textFieldDidFinishEdit(textField.text!, property: self.property)
+        }
+        textField.resignFirstResponder()
+    }
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        if textField.text == "\n" {
+            textField.resignFirstResponder()
+            return false
+        }
+        self.setNeedsLayout()
+        return true
     }
 }
 
-protocol RBSRealmPropertyCellDelegate {
+protocol RBSRealmPropertyCellDelegate: class {
     func textFieldDidFinishEdit(_ input: String, property: Property)
 }

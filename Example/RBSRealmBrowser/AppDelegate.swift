@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import RBSRealmBrowser
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,7 +15,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     private var navigationController: UINavigationController?
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+     func applicationDidFinishLaunching(_ application: UIApplication) {
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.window?.backgroundColor = UIColor.white
         let initialViewController = ViewController()
@@ -28,8 +29,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         self.window!.rootViewController = self.navigationController
 
         self.window!.tintColor = UIColor(colorLiteralRed: 0.714, green: 0.039, blue: 0.204, alpha: 1)
+        // add the realmbrowser quick action to your shortcut items array
+        if #available(iOS 9.0, *) {
+            application.shortcutItems = [RBSRealmBrowser.addBrowserQuickAction()]
+        } else {
+            // Fallback on earlier versions
+        }
         self.window!.makeKeyAndVisible()
-        return true
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -53,6 +59,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
-
+    
+    @available(iOS 9.0, *)
+    func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
+        
+        // handle the quick action
+        let rb:UIViewController = RBSRealmBrowser.realmBrowser()!
+        let vc = (window?.rootViewController)! as UIViewController
+        vc.present(rb, animated: true)
+        
+    }
+    
 
 }

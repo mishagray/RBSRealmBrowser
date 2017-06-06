@@ -1,6 +1,36 @@
+## RBSRealmBrowser v 0.1.9
+- fixed crash when attempting to view object with referenced object
+
+## RBSRealmBrowser v 0.1.8
+- Bug fixes
+- Clean up
+
+## RBSRealmBrowser v 0.1.7
+- Bug fixes
+    - fixed delete
+
+- Layout improvements
+    - added realm colors (whoop)
+    - show textField borders when in edit mode
+    - minor other layout improvements (like propertyValues not being displayed)
+
+- New Features
+    - added peek & pop (for properties) for supported devices
+    - sort your object classes by class name
+
+- General
+    - using real world objects for pod try
+
+## RBSRealmBrowser v 0.1.6
+- Improved delete functionality 
+- minor layout and logic fixes
+- added quick actions
+
 ## RBSRealmBrowser v 0.1.5
 - Added possibilty to delete one or multiple objects. 
-- minor fixes
+- minor layout and logic fixes
+- compatible with Swift 3.0
+- updated to the latest realm version
 
 ## RBSRealmBrowser v 0.1.4
 - Added possibilty to inspect elements contained in your objects' lists. 
