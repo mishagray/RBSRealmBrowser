@@ -14,15 +14,17 @@ class RBSRealmObjectsBrowser: UITableViewController, UIViewControllerPreviewingD
     
     private var objects: Array <Object>
     private var schema: ObjectSchema
-    private var properties: Array <AnyObject>
+    private var properties: Array <Property>
     private let cellIdentifier = "objectCell"
     private var isEditMode: Bool = false
     private var selectAll: Bool = false
+    private var realm:Realm
     private var selectedObjects: Array<Object> = []
     
-    init(objects: Array<Object>) {
+    init(objects: Array<Object>, realm: Realm) {
         
         self.objects = objects
+        self.realm = realm
         schema = objects[0].objectSchema
         properties = schema.properties
         super.init(nibName: nil, bundle: nil)
@@ -110,7 +112,7 @@ class RBSRealmObjectsBrowser: UITableViewController, UIViewControllerPreviewingD
             selectedObjects.append(objects[indexPath.row])
         } else {
             tableView.deselectRow(at: indexPath, animated: true)
-            let vc = RBSRealmPropertyBrowser(object:self.objects[indexPath.row])
+            let vc = RBSRealmPropertyBrowser(object:self.objects[indexPath.row], realm: realm)
             self.navigationController?.pushViewController(vc, animated: true)
         }
         
@@ -146,15 +148,10 @@ class RBSRealmObjectsBrowser: UITableViewController, UIViewControllerPreviewingD
                 deleteAllObjects()
             }else {
                 deleteObjects()
-                do {
-                    let realm = try Realm()
-                    let result:Results<DynamicObject> =  realm.dynamicObjects(schema.className)
-                    objects = Array(result)
-                    let indexSet = IndexSet(integer: 0)
-                    tableView.reloadSections(indexSet, with: .top)
-                }catch {
-                    print("error deleting objects")
-                }
+                let result:Results<DynamicObject> =  realm.dynamicObjects(schema.className)
+                objects = Array(result)
+                let indexSet = IndexSet(integer: 0)
+                tableView.reloadSections(indexSet, with: .top)
             }
             
             self.navigationItem.leftBarButtonItem = nil
@@ -181,7 +178,6 @@ class RBSRealmObjectsBrowser: UITableViewController, UIViewControllerPreviewingD
     }
     
     private func deleteAllObjects() {
-        let realm = try! Realm()
         try! realm.write {
             realm.delete(objects)
         }
@@ -191,7 +187,6 @@ class RBSRealmObjectsBrowser: UITableViewController, UIViewControllerPreviewingD
     }
     
     private func deleteObjects() {
-        let realm = try! Realm()
         if selectedObjects.count > 0 {
             try! realm.write {
                 realm.delete(selectedObjects)
@@ -208,7 +203,7 @@ class RBSRealmObjectsBrowser: UITableViewController, UIViewControllerPreviewingD
         
         guard let cell = tableView?.cellForRow(at:indexPath) else { return nil }
         
-        let detailVC =  RBSRealmPropertyBrowser(object:self.objects[indexPath.row])
+        let detailVC =  RBSRealmPropertyBrowser(object:self.objects[indexPath.row], realm: realm)
         detailVC.preferredContentSize = CGSize(width: 0.0, height: 300)
         previewingContext.sourceRect = cell.frame
         
