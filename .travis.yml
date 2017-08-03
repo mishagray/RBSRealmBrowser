@@ -2,16 +2,28 @@
 # * http://www.objc.io/issue-6/travis-ci.html
 # * https://github.com/supermarin/xcpretty#usage
 
-language: objective-c
-osx_image: xcode8.3
-cache: cocoapods
-podfile: Example/Podfile
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+      language: cpp
+    - os: osx
+      osx_image: xcode8.3
+      language: objective-c
+      cache: cocoapods
+      sudo: required
+      podfile: Example/Podfile
 rvm:
 - 2.4.1
 before_install:
 - gem update cocoapods # Since Travis is not always on latest version
 - pod update --project-directory=Example --verbose
-
+  - chmod ugo+x ./Scripts/InstallSwift.sh
+  - . ./Scripts/InstallSwift.sh
 script:
 - set -o pipefail && xcodebuild -workspace Example/RBSRealmBrowser.xcworkspace -scheme RBSRealmBrowser CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 - pod lib lint --quick
+
+
+
