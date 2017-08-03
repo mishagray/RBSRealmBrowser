@@ -10,7 +10,7 @@ matrix:
       language: cpp
     - os: osx
       osx_image: xcode8.3
-      language: swift
+      language: objective-c
       cache: cocoapods
       sudo: required
       podfile: Example/Podfile
