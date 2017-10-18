@@ -9,54 +9,90 @@
 import RealmSwift
 import AVFoundation
 
-class RBSTools {
-    
-    static let localVersion = "v0.2.0"
-    
-    class func stringForProperty(_ property: Property, object: Object) -> String {
+extension Object {
+    var primaryProperty: Property? {
+        return objectSchema.primaryKeyProperty ?? objectSchema.properties.first
+    }
+
+    var primaryValueText: String {
+        guard let property = primaryProperty else { return "no properties" }
+        return valueText(property: property)
+    }
+
+    var primaryPropertyText: String {
+        guard let property = primaryProperty else { return "no properties" }
+        return propertyText(property)
+    }
+
+    var propertiesText: String {
+        guard let property = primaryProperty else { return "" }
+        return objectSchema.properties.filter { $0.name != property.name }
+            .map { propertyText($0) }
+            .joined(separator: ", ")
+    }
+
+    private func propertyText(_ property: Property) -> String {
+        return "\(property.name): \(valueText(property: property))"
+    }
+
+    func valueText(property: Property) -> String {
         var propertyValue = ""
         switch property.type {
         case .bool:
-            if object[property.name] as! Bool == false {
+            if self[property.name] as! Bool == false {
                 propertyValue = "false"
             } else {
                 propertyValue = "true"
             }
             break
         case .int, .float, .double:
-            propertyValue = String(describing: object[property.name] as! NSNumber)
+            propertyValue = String(describing: self[property.name] as! NSNumber)
             break
         case .string:
-            propertyValue = object[property.name] as! String
+            propertyValue = self[property.name] as! String
             break
-        case .array:
-            let array = object.dynamicList(property.name)
+            //        case .array:
+            //            let array = object.dynamicList(property.name)
+            //            propertyValue = String.localizedStringWithFormat("%li objects  ->", array.count)
+        //            break
+        case .linkingObjects:
+            let array = self.dynamicList(property.name)
             propertyValue = String.localizedStringWithFormat("%li objects  ->", array.count)
             break
         case .object:
-            guard let objAsProperty = object[property.name] else {
+            guard let objAsProperty = self[property.name] else {
                 return ""
             }
-            let obj = objAsProperty as! Object
-            let schema = obj.objectSchema
-            for prop in schema.properties {
-                if prop.type == .string {
-                    propertyValue = obj[prop.name] as! String
-                }
-                break
+            if let list = objAsProperty as? ListBase {
+                propertyValue = String.localizedStringWithFormat("%li objects  ->", list.count)
             }
-            if propertyValue.count == 0 {
-                propertyValue = obj.className
+            else if let obj = objAsProperty as? Object  {
+                if let subProperty = obj.primaryProperty {
+                    propertyValue = obj.valueText(property: subProperty)
+                } else {
+                    propertyValue = property.objectClassName ?? ""
+                }
+            } else {
+                propertyValue = property.objectClassName ?? ""
             }
             break
         case .any:
-            let data =  object[property.name]
+            let data =  self[property.name]
             propertyValue = String((data as AnyObject).description)
             break
         default:
             return ""
         }
         return propertyValue
+    }
+}
+
+class RBSTools {
+    
+    static let localVersion = "v0.2.0"
+    
+    class func stringForProperty(_ property: Property, object: Object) -> String {
+        return object.valueText(property: property)
     }
     
     static func checkForUpdates() {

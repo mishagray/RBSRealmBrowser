@@ -112,8 +112,8 @@ class RBSRealmPropertyCell: UITableViewCell, UITextFieldDelegate {
     
     private func stringForType(type:PropertyType) -> String {
         switch type {
-        case .array:
-            return "Array"
+//        case .array:
+//            return "Array"
         case .bool:
             return "Boolean"
         case .float:

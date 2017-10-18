@@ -47,10 +47,7 @@ class RBSRealmPropertyBrowser: UITableViewController, RBSRealmPropertyCellDelega
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let property = properties[indexPath.row] 
         let stringvalue = RBSTools.stringForProperty(property, object: object)
-        var isArray = false
-        if property.type == .array {
-            isArray = true
-        }
+        let isArray = (property.type == .linkingObjects)
         (cell as! RBSRealmPropertyCell).cellWithAttributes(property.name, propertyValue: stringvalue, editMode:isEditMode, property:property, isArray:isArray)
     }
     
@@ -74,24 +71,22 @@ class RBSRealmPropertyBrowser: UITableViewController, RBSRealmPropertyCellDelega
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if !isEditMode {
             tableView.deselectRow(at: indexPath, animated: true)
-            let property = properties[indexPath.row] 
-            if property.type == .array {
-                let results = object.dynamicList(property.name)
-                var objects: Array<Object> = []
-                for obj in results {
-                    objects.append(obj)
+            let property = properties[indexPath.row]
+
+            let value = object[property.name]
+            if let obj = value as? Object {
+                let objectsViewController = RBSRealmPropertyBrowser(object: obj, realm: realm)
+                navigationController?.pushViewController(objectsViewController, animated: true)
+            } else if let _ = value as? ListBase {
+                let objects = Array(object.dynamicList(property.name))
+                if objects.count == 1 {
+                    let objectsViewController = RBSRealmPropertyBrowser(object: objects[0], realm: realm)
+                    navigationController?.pushViewController(objectsViewController, animated: true)
                 }
-                if objects.count > 0 {
+                else if objects.count > 0 {
                     let objectsViewController = RBSRealmObjectsBrowser(objects: objects, realm: realm)
                     navigationController?.pushViewController(objectsViewController, animated: true)
                 }
-            }else if property.type == .object {
-                guard let obj = object[property.name] else {
-                    print("failed getting object for property")
-                    return
-                }
-                let objectsViewController = RBSRealmPropertyBrowser(object: obj as! Object, realm: realm)
-                navigationController?.pushViewController(objectsViewController, animated: true)
             }
         }
         
@@ -132,7 +127,7 @@ class RBSRealmPropertyBrowser: UITableViewController, RBSRealmPropertyCellDelega
             let propertyValue:String = newValue as String
             saveValueForProperty(value: propertyValue, propertyName: property.name)
             break
-        case .array:
+        case .linkingObjects:
             
             break
         case .object:

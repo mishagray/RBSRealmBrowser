@@ -24,32 +24,30 @@ class ViewController: UIViewController {
         
         let catNames = ["Garfield", "Lutz", "Squanch"]
         let humanNames = ["Morty", "Rick", "Birdperson"]
-        var i = 0
-        while i < 3 {
-            do {
-                let realm = try Realm()
-                try realm.write() {
-                    let person = Person()
-                    person.personName = humanNames[i]
-                    realm.add(person)
-                    let cat = Cat()
-                    person.cat = cat;
-                    cat.catName = catNames[i]
-                    cat.isTired = true
-                    cat.toys.append(person)
-                    cat.toys.append(person)
-                    cat.toys.append(person)
-                    person.cat = cat;
-                    realm.add(cat)
-                }
 
-            }catch {
-                print("failed creatimg objects")
+        do {
+            let realm = try Realm()
+            if realm.objects(Cat.self).count == 0 {
+                try realm.write {
+                    let persons = humanNames.map { personName -> Person in
+                        let person = Person()
+                        person.personName = personName
+                        realm.add(person)
+                        return person
+                    }
+                    for (index,catName) in catNames.enumerated() {
+                        let cat = Cat()
+                        persons[index].cat = cat;
+                        cat.catName = catName
+                        cat.isTired = true
+                        cat.toys.append(objectsIn: persons[0...index])
+                    }
+                }
             }
-            
-            i += 1
+        } catch {
+            print("failed creatimg objects with \(error)")
         }
-        
+
         let bbi = UIBarButtonItem(title: "Open", style: UIBarButtonItemStyle.plain, target: self, action: #selector(ViewController.openBrowser))
         self.navigationItem.rightBarButtonItem = bbi
     }
